@@ -8,7 +8,9 @@ using UnityEngine.UI;
 [RequireComponent(typeof(Rigidbody2D))]
 public class Movement : MonoBehaviour {
 
-    public static Queue<MovementQueueEntry> MovementQueue = new Queue<MovementQueueEntry>();
+    //public static Queue<MovementQueueEntry> MovementQueue = new Queue<MovementQueueEntry>();
+    public static MovementQueueEntry[] MovementBuffer = new MovementQueueEntry[1024];
+    public static int NextActionAddIndex = 0;
     public static Camera MainCam = Camera.main;
     public static float SpeedMutiplier = 10f;
 
@@ -31,6 +33,7 @@ public class Movement : MonoBehaviour {
     private Rigidbody2D _rigidbody;
     public MoveMentMode LastMode;
     private Movement _nextBody;
+    private int nextActionIndex = 0;
 
     // Use this for initialization
     void Start() {
@@ -40,33 +43,43 @@ public class Movement : MonoBehaviour {
     }
 
     void SetNextActionMode(MoveMentMode mode) {
-        lock (MovementQueue) {
-            MovementQueue.Enqueue(new MovementQueueEntry(mode));
-        }
+        Debug.Log(mode);
+        if(NextActionAddIndex == 0) ResetBufferIndex();
+        MovementBuffer[NextActionAddIndex++] = new MovementQueueEntry(mode);
     }
 
-    public void FalgBody() {
+    public void ResetBufferIndex() {
+        this.nextActionIndex = 0;
+        if(!_isTail)
+            this._nextBody.ResetBufferIndex();
+    }
+
+    public void InitBody(int actionIndex) {
         _isBody = true;
+        this.nextActionIndex = actionIndex;
     }
 
     public void NextAction() {
-        MoveMentMode next = MoveMentMode.Default;
-        Vector3? transPosition;
-        lock (MovementQueue) {
-            if (MovementQueue.Count <= 0) return;
-            MovementQueueEntry entry = MovementQueue.Peek();
-            next = entry.Mode;
-            transPosition = entry.Position;
-            if (transPosition == null) {
-                entry.Position = this.transform.position;
-                transPosition = this.transform.position;
+
+        if (MovementBuffer[nextActionIndex] == null) {
+            if (_isTail) {
+                NextActionAddIndex = 0;
             }
+            return;
+        }
+        Debug.Log(MovementBuffer[nextActionIndex].Position + this.gameObject.ToString());
+        MovementQueueEntry entry = MovementBuffer[nextActionIndex];
+        var next = entry.Mode;
+        var transPosition = entry.Position;
+        if (transPosition == null) {
+            entry.Position = this.transform.position;
+            transPosition = this.transform.position;
         }
         Vector3 thisPosition = this.transform.position;
         if (thisPosition != transPosition) {
             return;
-
         }
+        nextActionIndex++;
 
         switch (next) {
 
@@ -112,12 +125,6 @@ public class Movement : MonoBehaviour {
         }
 
 
-        if (_isTail) {
-            lock (MovementQueue) {
-                MovementQueue.Dequeue();
-            }
-        }
-
     }
 
     void AddBody() {
@@ -151,7 +158,7 @@ public class Movement : MonoBehaviour {
         Movement nextBody = ((GameObject)Instantiate(this.gameObject, positionToPlace, Quaternion.identity)).GetComponent<Movement>();
         nextBody.gameObject.GetComponent<Rigidbody2D>().velocity = this._rigidbody.velocity;
         nextBody.LastMode = this.LastMode;
-        nextBody.FalgBody();
+        nextBody.InitBody(this.nextActionIndex-1);
         _nextBody = nextBody;
 
     }
@@ -188,11 +195,12 @@ public class Movement : MonoBehaviour {
             SetNextActionMode(MoveMentMode.Left);
         } else if (Input.GetKeyDown("right")) {
             SetNextActionMode(MoveMentMode.Right);
-        } else if (Input.GetKeyDown("space")) {
-            AddBody();
         }
 
         NextAction();
+        if (Input.GetKeyDown("space")) {
+            AddBody();
+        }
         // Debug.Log(position);
     }
 }
