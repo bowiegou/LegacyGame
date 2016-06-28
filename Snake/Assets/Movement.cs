@@ -13,6 +13,7 @@ public class Movement : MonoBehaviour {
     public static int NextActionAddIndex = 0;
     public static Camera MainCam = Camera.main;
     public static float SpeedMutiplier = 10f;
+	//public static bool abandonNextClear;
 
     public enum MoveMentMode {
         Up,
@@ -34,6 +35,7 @@ public class Movement : MonoBehaviour {
     public MoveMentMode LastMode;
     private Movement _nextBody;
     private int nextActionIndex = 0;
+	private bool addBodyToEnd = false;
 
     // Use this for initialization
     void Start() {
@@ -43,135 +45,171 @@ public class Movement : MonoBehaviour {
     }
 
     void SetNextActionMode(MoveMentMode mode) {
-        //Debug.Log(mode);
+        Debug.Log("--------" + mode);
         if(NextActionAddIndex == 0) ResetBufferIndex();
         MovementBuffer[NextActionAddIndex++] = new MovementQueueEntry(mode);
     }
 
     public void ResetBufferIndex() {
-        this.nextActionIndex = 0;
-        if(!_isTail)
-            this._nextBody.ResetBufferIndex();
+		lock (MovementBuffer) {
+			this.nextActionIndex = 0;
+			if (!_isTail)
+				this._nextBody.ResetBufferIndex ();
+		}
     }
 
     public void InitBody(int actionIndex) {
         _isBody = true;
         this.nextActionIndex = actionIndex;
     }
+		
 
     public void NextAction() {
 
-        if (MovementBuffer[nextActionIndex] == null) {
-            if (_isTail) {
-                NextActionAddIndex = 0;
-            }
-            return;
-        }
+		if (MovementBuffer [nextActionIndex] == null) {
+			if (_isTail && !addBodyToEnd) {
+				NextActionAddIndex = 0;
+			}
+            
+		} else {
         
-        MovementQueueEntry entry = MovementBuffer[nextActionIndex];
-        var next = entry.Mode;
-        Vector3? transPosition = entry.Position;
-        Vector3 thisPosition = this.transform.position;
-        //Debug.Log(MovementBuffer[nextActionIndex].Position + "" +thisPosition +this.gameObject.ToString());
-        if (transPosition == null) {
-            transPosition = thisPosition;
-            entry.Position = thisPosition;
-        } else  if (!(Mathf.Abs(thisPosition.x - transPosition.Value.x) < 0.35f) || !(Mathf.Abs(thisPosition.y - transPosition.Value.y) < 0.35f)) {
-            return;
-        }
-        this.transform.position = transPosition.Value;
-        nextActionIndex++;
+			MovementQueueEntry entry = MovementBuffer [nextActionIndex];
+			var next = entry.Mode;
+			Vector3? transPosition = entry.Position;
+			Vector3 thisPosition = this.transform.position;
 
-        switch (next) {
+			if (transPosition == null) {
+				transPosition = thisPosition;
+				entry.Position = thisPosition;
+			} 
 
-            case MoveMentMode.Right: {
-                    this._rigidbody.velocity = new Vector2(1f * SpeedMutiplier, 0.0f);
-                    LastMode = next;
-                    break;
-                }
-            case MoveMentMode.Left: {
-                    this._rigidbody.velocity = new Vector2(-1f * SpeedMutiplier, 0.0f);
-                    LastMode = next;
-                    break;
-                }
-            case MoveMentMode.Up: {
-                    this._rigidbody.velocity = new Vector2(0.0f, 1f * SpeedMutiplier);
-                    LastMode = next;
-                    break;
-                }
-            case MoveMentMode.Down: {
-                    this._rigidbody.velocity = new Vector2(0.0f, -1f * SpeedMutiplier);
-                    LastMode = next;
-                    break;
-                }
+			if (thisPosition == transPosition.Value) {
+				this.transform.position = transPosition.Value;
+				nextActionIndex++;
+
+				switch (next) {
+
+				case MoveMentMode.Right:
+					{
+						this._rigidbody.velocity = new Vector2 (1f * SpeedMutiplier, 0.0f);
+						LastMode = next;
+						break;
+					}
+				case MoveMentMode.Left:
+					{
+						this._rigidbody.velocity = new Vector2 (-1f * SpeedMutiplier, 0.0f);
+						LastMode = next;
+						break;
+					}
+				case MoveMentMode.Up:
+					{
+						this._rigidbody.velocity = new Vector2 (0.0f, 1f * SpeedMutiplier);
+						LastMode = next;
+						break;
+					}
+				case MoveMentMode.Down:
+					{
+						this._rigidbody.velocity = new Vector2 (0.0f, -1f * SpeedMutiplier);
+						LastMode = next;
+						break;
+					}
 
 
-            case MoveMentMode.RightBorder: {
-                    this.transform.position = new Vector3(MainCam.ViewportToWorldPoint(new Vector3(1f, 0f, 0f)).x, thisPosition.y, 0.0f);
-                    break;
-                }
-            case MoveMentMode.LeftBorder: {
-                    this.transform.position = new Vector3(MainCam.ViewportToWorldPoint(new Vector3(0f, 0f, 0f)).x, thisPosition.y, 0.0f);
-                    break;
-                }
-            case MoveMentMode.UpBorder: {
-                    this.transform.position = new Vector3(thisPosition.x, (MainCam.ViewportToWorldPoint(new Vector3(0f, 1f, 0f)).y));
-                    break;
-                }
-            case MoveMentMode.DownBorder: {
-                    this.transform.position = new Vector3(thisPosition.x, (MainCam.ViewportToWorldPoint(new Vector3(0f, 0f, 0f)).y));
-                    break;
-                }
+				case MoveMentMode.RightBorder:
+					{
+						this.transform.position = new Vector3 (MainCam.ViewportToWorldPoint (new Vector3 (1f, 0f, 0f)).x, thisPosition.y, 0.0f);
+						break;
+					}
+				case MoveMentMode.LeftBorder:
+					{
+						this.transform.position = new Vector3 (MainCam.ViewportToWorldPoint (new Vector3 (0f, 0f, 0f)).x, thisPosition.y, 0.0f);
+						break;
+					}
+				case MoveMentMode.UpBorder:
+					{
+						this.transform.position = new Vector3 (thisPosition.x, (MainCam.ViewportToWorldPoint (new Vector3 (0f, 1f, 0f)).y));
+						break;
+					}
+				case MoveMentMode.DownBorder:
+					{
+						this.transform.position = new Vector3 (thisPosition.x, (MainCam.ViewportToWorldPoint (new Vector3 (0f, 0f, 0f)).y));
+						break;
+					}
 
-        }
+				}
+			} else if (_isTail) {
+				Debug.Log (MovementBuffer [nextActionIndex].Position + "" + thisPosition + this.gameObject.ToString ());
+			}
+		}
+
+		if (addBodyToEnd) {
+			lock (MovementBuffer) {
+				//safety measure
+				Time.timeScale = 0f;
+				AddBodyProcess ();
+				addBodyToEnd = false;
+				Time.timeScale = 1f;
+			}
+		}
 
         
-
-        //_nextBody.NextAction();
 
 
     }
+		
 
-    void AddBody() {
+	void AddBodyProcess() {
+
+		Debug.Log ("AddBody");
+		_isTail = false;
+
+		Vector3 positionToPlace = this.transform.position;
+
+		switch (LastMode) {
+		case MoveMentMode.Right: {
+				positionToPlace.x--;
+				break;
+			}
+		case MoveMentMode.Left: {
+				positionToPlace.x++;
+				break;
+			}
+		case MoveMentMode.Up: {
+				positionToPlace.y--;
+				break;
+			}
+		case MoveMentMode.Down: {
+				positionToPlace.y++;
+				break;
+			}
+		}
+
+		Movement nextBody = ((GameObject)Instantiate(this.gameObject, positionToPlace, Quaternion.identity)).GetComponent<Movement>();
+		nextBody.gameObject.GetComponent<Rigidbody2D>().velocity = this._rigidbody.velocity;
+		nextBody.LastMode = this.LastMode;
+		nextBody.InitBody(this.nextActionIndex);
+		_nextBody = nextBody;
+	}
+
+    public void AddBody() {
         if (!_isTail) {
             _nextBody.AddBody();
             return;
         }
-        _isTail = false;
-
-        Vector3 positionToPlace = this.transform.position;
-
-        switch (LastMode) {
-            case MoveMentMode.Right: {
-                    positionToPlace.x--;
-                    break;
-                }
-            case MoveMentMode.Left: {
-                    positionToPlace.x++;
-                    break;
-                }
-            case MoveMentMode.Up: {
-                    positionToPlace.y--;
-                    break;
-                }
-            case MoveMentMode.Down: {
-                    positionToPlace.y++;
-                    break;
-                }
-        }
-
-        Movement nextBody = ((GameObject)Instantiate(this.gameObject, positionToPlace, Quaternion.identity)).GetComponent<Movement>();
-        nextBody.gameObject.GetComponent<Rigidbody2D>().velocity = this._rigidbody.velocity;
-        nextBody.LastMode = this.LastMode;
-        nextBody.InitBody(this.nextActionIndex-1 < 0 ? 0 : nextActionIndex - 1);
-        _nextBody = nextBody;
+		lock (MovementBuffer) {
+			this.addBodyToEnd = true;
+		}
 
     }
 
+
+	void FixedUpdate() {
+			NextAction();
+	}
+		
     // Update is called once per frame
     void Update() {
-        if (_isBody) {
-            NextAction();
+		if (_isBody) {
             return;
         }
 
@@ -202,7 +240,6 @@ public class Movement : MonoBehaviour {
             SetNextActionMode(MoveMentMode.Right);
         }
 
-        NextAction();
         if (Input.GetKeyDown("space")) {
             AddBody();
         }
