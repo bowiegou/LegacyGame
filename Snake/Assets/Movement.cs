@@ -43,7 +43,7 @@ public class Movement : MonoBehaviour {
     }
 
     void SetNextActionMode(MoveMentMode mode) {
-        Debug.Log(mode);
+        //Debug.Log(mode);
         if(NextActionAddIndex == 0) ResetBufferIndex();
         MovementBuffer[NextActionAddIndex++] = new MovementQueueEntry(mode);
     }
@@ -67,18 +67,19 @@ public class Movement : MonoBehaviour {
             }
             return;
         }
-        Debug.Log(MovementBuffer[nextActionIndex].Position + this.gameObject.ToString());
+        
         MovementQueueEntry entry = MovementBuffer[nextActionIndex];
         var next = entry.Mode;
-        var transPosition = entry.Position;
-        if (transPosition == null) {
-            entry.Position = this.transform.position;
-            transPosition = this.transform.position;
-        }
+        Vector3? transPosition = entry.Position;
         Vector3 thisPosition = this.transform.position;
-        if (thisPosition != transPosition) {
+        //Debug.Log(MovementBuffer[nextActionIndex].Position + "" +thisPosition +this.gameObject.ToString());
+        if (transPosition == null) {
+            transPosition = thisPosition;
+            entry.Position = thisPosition;
+        } else  if (!(Mathf.Abs(thisPosition.x - transPosition.Value.x) < 0.35f) || !(Mathf.Abs(thisPosition.y - transPosition.Value.y) < 0.35f)) {
             return;
         }
+        this.transform.position = transPosition.Value;
         nextActionIndex++;
 
         switch (next) {
@@ -124,6 +125,10 @@ public class Movement : MonoBehaviour {
 
         }
 
+        
+
+        //_nextBody.NextAction();
+
 
     }
 
@@ -158,7 +163,7 @@ public class Movement : MonoBehaviour {
         Movement nextBody = ((GameObject)Instantiate(this.gameObject, positionToPlace, Quaternion.identity)).GetComponent<Movement>();
         nextBody.gameObject.GetComponent<Rigidbody2D>().velocity = this._rigidbody.velocity;
         nextBody.LastMode = this.LastMode;
-        nextBody.InitBody(this.nextActionIndex-1);
+        nextBody.InitBody(this.nextActionIndex-1 < 0 ? 0 : nextActionIndex - 1);
         _nextBody = nextBody;
 
     }
