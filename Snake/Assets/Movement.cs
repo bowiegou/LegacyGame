@@ -11,7 +11,7 @@ public class Movement : MonoBehaviour {
     //public static Queue<MovementQueueEntry> MovementQueue = new Queue<MovementQueueEntry>();
     public static MovementQueueEntry[] MovementBuffer = new MovementQueueEntry[1024];
     public static int NextActionAddIndex = 0;
-    public static Camera MainCam = Camera.main;
+	public static Camera MainCam;
     public static float SpeedMutiplier = 10f;
 	//public static bool abandonNextClear;
 
@@ -42,10 +42,11 @@ public class Movement : MonoBehaviour {
         this._rigidbody = this.GetComponent<Rigidbody2D>();
         this._rigidbody.gravityScale = 0;
         this._rigidbody.isKinematic = true;
+		MainCam = Camera.main;
     }
 
     void SetNextActionMode(MoveMentMode mode) {
-        Debug.Log("--------" + mode);
+        //Debug.Log("--------" + mode);
         if(NextActionAddIndex == 0) ResetBufferIndex();
         MovementBuffer[NextActionAddIndex++] = new MovementQueueEntry(mode);
     }
@@ -138,7 +139,7 @@ public class Movement : MonoBehaviour {
 
 				}
 			} else if (_isTail) {
-				Debug.Log (MovementBuffer [nextActionIndex].Position + "" + thisPosition + this.gameObject.ToString ());
+				//Debug.Log (MovementBuffer [nextActionIndex].Position + "" + thisPosition + this.gameObject.ToString ());
 			}
 		}
 
@@ -160,7 +161,7 @@ public class Movement : MonoBehaviour {
 
 	void AddBodyProcess() {
 
-		Debug.Log ("AddBody");
+		//Debug.Log ("AddBody");
 		_isTail = false;
 
 		Vector3 positionToPlace = this.transform.position;
@@ -186,7 +187,9 @@ public class Movement : MonoBehaviour {
 
 		Movement nextBody = ((GameObject)Instantiate(this.gameObject, positionToPlace, Quaternion.identity)).GetComponent<Movement>();
 		nextBody.gameObject.GetComponent<Rigidbody2D>().velocity = this._rigidbody.velocity;
+		nextBody.gameObject.name = "Body";
 		nextBody.LastMode = this.LastMode;
+		nextBody.transform.parent = this.transform.parent;
 		nextBody.InitBody(this.nextActionIndex);
 		_nextBody = nextBody;
 	}
