@@ -1,18 +1,18 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class GameController {
+public class GameController : MonoBehaviour {
 	public Score GameScore;
 	public int ScoreMutiplier = 10;
 
-	public GameController() {
-		this.GameScore = new Score (10);
+	void start() {
+		this.GameScore = new Score (ScoreMutiplier);
 	}
 
 
 
-	void OnFoodAte() {
-		GameScore.updateScore ();
+	public void OnFoodAte() {
+		GameScore.UpdateScore ();
 
 	}
 
@@ -21,27 +21,28 @@ public class GameController {
 public struct Score {
 	public int FoodAte;
 	public int TotalScore;
-	int scoreMutiplier;
+    private readonly int _scoreMutiplier;
 
 
 	public Score (int scoreMutiplier ,int foodAte = 0, int totalScore = 0)
 	{
 		this.FoodAte = foodAte;
 		this.TotalScore = totalScore;
-		this.scoreMutiplier = scoreMutiplier;
+		this._scoreMutiplier = scoreMutiplier;
 	}
 
-	public int getTotalScore() {
+	public int GetTotalScore() {
 		return this.TotalScore;
 	}
 
-	public int updateScore() {
-		updateScore (++this.FoodAte);
+	public int UpdateScore() {
+		return UpdateScore (++this.FoodAte);
 	}
 
-	public int updateScore(int FoodAte) {
-		this.FoodAte = FoodAte;
-		this.TotalScore = FoodAte * scoreMutiplier;
+	public int UpdateScore(int foodAte) {
+		this.FoodAte = foodAte;
+		this.TotalScore = foodAte * _scoreMutiplier;
+	    return this.TotalScore;
 	}
 
 
