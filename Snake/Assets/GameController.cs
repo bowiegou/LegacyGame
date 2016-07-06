@@ -3,6 +3,7 @@ using System.Collections;
 
 public class GameController : MonoBehaviour {
 	public Score GameScore;
+	public FoodSpawner FoodSpawner;
 	public int ScoreMutiplier = 10;
 
 	void start() {
@@ -13,7 +14,7 @@ public class GameController : MonoBehaviour {
 
 	public void OnFoodAte() {
 		GameScore.UpdateScore ();
-
+		FoodSpawner.SpawnFood ();
 	}
 
 }
