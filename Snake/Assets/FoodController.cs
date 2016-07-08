@@ -15,6 +15,9 @@ public class FoodController : MonoBehaviour {
 
     public void OnTriggerEnter2D(Collider2D collision) {
         Debug.Log(collision);
+		if (collision.CompareTag ("Body")) {
+			collision.gameObject.SendMessage ("AddBody");
+		}
         Destroy(this.gameObject);
     }
 }

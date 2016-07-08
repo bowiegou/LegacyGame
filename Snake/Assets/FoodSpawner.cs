@@ -22,8 +22,9 @@ public class FoodSpawner : MonoBehaviour {
 	}
 
 	public void SpawnFood() {
-		Vector3 viewPortPoint = new Vector3 (Random.value, Random.value);
+		Vector3 viewPortPoint = new Vector3 (Random.value, Random.value,0.0f);
 		Vector3 positionToPlace = Camera.main.ViewportToWorldPoint (viewPortPoint);
+		positionToPlace.z = 0;
 		Instantiate (FoodPrefab, positionToPlace, Quaternion.identity);
 	}
 }
